@@ -25,12 +25,12 @@ while 1:
 
       print("hello true") 
 
-    if(IO.input(14)==False): #object is near
+    # if(IO.input(14)==False): #object is near
 
-    #    IO.output(3,True) #Green led ON
+    # #    IO.output(3,True) #Green led ON
 
-    #    IO.output(2,False) # Red led OFF
+    # #    IO.output(2,False) # Red led OFF
 
 
-      print("helloo false")
+    #   print("helloo false")
 
