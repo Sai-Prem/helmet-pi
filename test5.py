@@ -10,8 +10,11 @@ from sqlalchemy import create_engine, ForeignKey, Column, String, Integer, CHAR
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.sql import text
 
-from tflite_webcam_detect import VideoStream, yield_frames
+from tflite_webcam_detect import yield_frames
 
+
+# TODO:
+# deallocate camera on exit
 
 Base = declarative_base()
 
@@ -49,13 +52,13 @@ class Comment(Base):
     def __repr__(self):
         return f"({self.account} {self.comment} {self.ssn})"
 
-# Sets the Pi so it knows we are using the physical pin numbering
-IO.setmode(IO.BOARD)
-
-# Sets up pin 18 as an input
-IO.setup(24, IO.IN, pull_up_down=IO.PUD_UP)
+IO.setwarnings(False)
+IO.setmode(IO.BCM)
 
 app = Flask(__name__)
+
+# def ir_sensor(IO, pin) -> bool:
+#     return IO.input(pin)
 
 def gen():
     camera = PiCamera()
@@ -90,15 +93,8 @@ def gen():
         frame = jpeg.tobytes()
         raw_capture.truncate(0)
         yield (b"--frame\r\n" + b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n\\n")
-
-        # if cv2.waitKey(0) & 0xff == ord('q'):
-        # print(IO.input(24))
-        if IO.input(24) == IO.LOW:
-            raw_capture.truncate(0)
-            camera.close()
-            print("redirecting")
-            return redirect('/detect')
-
+    
+    camera.close()
 
 @app.route("/signup", methods=["GET", "POST"])
 def home():
@@ -210,12 +206,12 @@ def signin():
 @app.route("/camera")
 def video_feed():
     # return Response(gen(camera), mimetype="multipart/x-mixed-replace; boundary=frame")
-    return Response(yield_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    return Response(gen(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-# @app.route("/detect")
-# def detect_feed():
-#     # return Response(gen(camera), mimetype="multipart/x-mixed-replace; boundary=frame")
-#     return Response(yield_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
+@app.route("/detect")
+def detect_feed():
+    # return Response(gen(camera), mimetype="multipart/x-mixed-replace; boundary=frame")
+    return Response(yield_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/comments")
 def comments():
@@ -225,5 +221,6 @@ def comments():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=2204, threaded=True, debug=False) 
+    app.run(host="0.0.0.0", port=2204, threaded=True) 
+
     ## 192.168.135.195:2204 wlan0
